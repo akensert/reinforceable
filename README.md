@@ -6,15 +6,15 @@ Work in progress (unfinished). Any feedback is welcomed.
 ## About
 - Deep reinforcement learning (RL) implementations using [TF's probabilistic library](https://www.tensorflow.org/probability), specifically focusing on agents using recurrent neural networks (RNNs).
 
-- A light-weight package, only dependent on TensorFlow, TensorFlow probability and Gymnasium. Although possibly subject to change in the future, the RL implementations are currently implemented and optimized for a non-distributed setup (i.e., for a single CPU and/or GPU setup). 
+- Although possibly subject to change in the future, the RL implementations are currently implemented and optimized for a non-distributed setup (i.e., for a single CPU and/or GPU setup). 
 
-> A quick benchmark of the recurrent PPO algorithm in the [Atari](https://gymnasium.farama.org/environments/atari/) environments (using a single processor and GPU, and 32 parallel environments), shows that it processes, roughly, 6-12M frames per hour &mdash; approximately 1700-3300 frames per second (FPS).  
+> A quick benchmark of the recurrent PPO algorithm in the [Atari](https://gymnasium.farama.org/environments/atari/) environments (using a single processor + GPU, and 32 parallel environments), shows that it processes, roughly, 6-12M frames per hour &mdash; approximately 1700-3300 frames per second (FPS).  
 
 ## Highlights 
 
 - Python RL environments (e.g., [Gym(nasium)](https://github.com/Farama-Foundation/Gymnasium) enviroments such as [Classic Control](https://gymnasium.farama.org/environments/classic_control/) and [Atari](https://gymnasium.farama.org/environments/atari/) environments) can be run on the TF graph, allowing the complete interaction loop (agent-environment interaction) to run non-eagerly. See [Driver](https://github.com/akensert/reinforceable/blob/main/reinforceable/driver.py).
 
-- A PPO algorithm that deals with *partial observability* is implemented ([RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py)). [RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py) makes use of stateful RNNs to pass hidden states between time steps, allowing the agent to make decisions based on past states as well as the current state (Figure 1A). This contrasts to a typical PPO implementations wherein the agent makes decisions based on the current state only (Figure 1B).
+- A PPO algorithm that deals with *partial observability* is implemented ([RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py)). [RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py) makes use of stateful RNNs to pass hidden states between time steps, allowing the agent to make decisions based on past states as well as the current state (Figure B). This contrasts to a typical PPO implementations wherein the agent makes decisions based on the current state only (Figure A).
 
 <img src="https://github.com/akensert/reinforceable/blob/main/media/ppo.jpg" alt="PPO" width="800">
 
