@@ -67,21 +67,3 @@ class Timestep(NamedTuple):
         elif name == 'action_mask':
             return None 
         raise AttributeError(f'{name!r} not found.')
-
-    @staticmethod
-    def convert_to_timestep_fn(self, *components):
-        if len(components) > 2:
-            state, reward, terminal, truncated, info = components 
-            step_type = [2] if (terminal or truncated) else [1]
-        else:
-            state, info = components 
-            reward = 0.0
-            step_type = 0
-        return self.__class__(
-            state=state,
-            reward=np.expand_dims(
-                np.asarray(reward, dtype=np.float32), axis=1),
-            step_type=np.expand_dims(
-                np.asarray(step_type, dtype=np.int32), axis=1),
-            info=info
-        )
