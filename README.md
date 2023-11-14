@@ -8,22 +8,22 @@ Work in progress (unfinished). Any feedback is welcomed.
 
 - A light-weight package, only dependent on TensorFlow, TensorFlow probability and Gymnasium. Although possibly subject to change in the future, the RL implementations are currently implemented and optimized for a non-distributed setup (i.e., for a single CPU and/or GPU setup). 
 
-> A quick benchmark of the recurrent PPO algorithm in the [Atari](https://gymnasium.farama.org/environments/atari/) environments (using a single processor and GPU, and 32 parallel environments), shows that it processes, roughly, 6-12M frames per hour &#151; approximately 1700-3300 frames per second (FPS).  
+> A quick benchmark of the recurrent PPO algorithm in the [Atari](https://gymnasium.farama.org/environments/atari/) environments (using a single processor and GPU, and 32 parallel environments), shows that it processes, roughly, 6-12M frames per hour &mdash; approximately 1700-3300 frames per second (FPS).  
 
 ## Highlights 
 
 - Python RL environments (e.g., [Gym(nasium)](https://github.com/Farama-Foundation/Gymnasium) enviroments such as [Classic Control](https://gymnasium.farama.org/environments/classic_control/) and [Atari](https://gymnasium.farama.org/environments/atari/) environments) can be run on the TF graph, allowing the complete interaction loop (agent-environment interaction) to run non-eagerly. See [Driver](https://github.com/akensert/reinforceable/blob/main/reinforceable/driver.py).
 
-- A PPO algorithm that deals with *partial observability* is implemented ([RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/ppo/ppo_agent.py)). [RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/ppo/ppo_agent.py) makes use of stateful RNNs to pass hidden states between time steps, allowing the agent to make decisions based on past states as well as the current state (Figure 1A). This contrasts to a typical PPO implementations wherein the agent makes decisions based on the current state only (Figure 1B).
+- A PPO algorithm that deals with *partial observability* is implemented ([RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py)). [RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py) makes use of stateful RNNs to pass hidden states between time steps, allowing the agent to make decisions based on past states as well as the current state (Figure 1A). This contrasts to a typical PPO implementations wherein the agent makes decisions based on the current state only (Figure 1B).
 
 <img src="https://github.com/akensert/reinforceable/blob/main/media/ppo.jpg" alt="PPO" width="800">
 
-> The use of hidden states is a clever way to pass experiences through time. One limitation of this approach however, is that the hidden states correspond to incomplete trajectories (chunks of trajectories) for each training iteration &#151; a limitation especially emphasized for longer episodes and off-policy RL (using experience replay). For further reading, see [R2D2 paper](https://openreview.net/pdf?id=r1lyTjAqYX).
+> The use of hidden states is a clever way to pass experiences through time. One limitation of this approach however, is that the hidden states correspond to incomplete trajectories (chunks of trajectories) for each training iteration &mdash; a limitation especially emphasized for longer episodes and off-policy RL (using experience replay). For further reading, see [R2D2 paper](https://openreview.net/pdf?id=r1lyTjAqYX).
 
 ## Implementations
 
 - Agents
-    - [RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/ppo/ppo_agent.py)
+    - [RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py)
 - Layers
     - [DenseNormal](https://github.com/akensert/reinforceable/blob/main/reinforceable/layers/dense_normal.py)  - for continuous actions.
     - [DenseCategorical](https://github.com/akensert/reinforceable/blob/main/reinforceable/layers/dense_categorical.py) - for categorical actions.
@@ -32,7 +32,7 @@ Work in progress (unfinished). Any feedback is welcomed.
 - Distributions
     - [BoundedNormal](https://github.com/akensert/reinforceable/blob/main/reinforceable/distributions/bounded_normal.py) - a bounded normal distribution, inheriting from `TransformedDistribution`.
 - Environments
-    - [TimestepEnv](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/gym_wrappers.py) - wraps [gymnasium](https://gymnasium.farama.org/) environments to output [Timesteps](https://github.com/akensert/reinforceable/blob/main/timestep.py). (May get deprecated in the future, but for now used to deal with [tf.numpy_function](https://www.tensorflow.org/api_docs/python/tf/numpy_function).)
+    - [TimestepEnv](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/gym_wrappers.py) - wraps [gymnasium](https://gymnasium.farama.org/) environments to output [Timesteps](https://github.com/akensert/reinforceable/blob/main/reinforceable/timestep.py). (May get deprecated in the future, but for now used to deal with [tf.numpy_function](https://www.tensorflow.org/api_docs/python/tf/numpy_function).)
     - [AsyncEnvironment](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/async_env.py) - allowing multiple independent (fow now [TimestepEnv](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/gym_wrappers.py)) environments to run in parallel. 
 
 For hybrid action spaces, just combine action layers:
