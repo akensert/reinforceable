@@ -1,12 +1,14 @@
 # Reinforceable
 
 ## Status
-Work in progress (unfinished). Any feedback is welcomed.
+Work in progress.
 
 ## About
 - Deep reinforcement learning (RL) implementations using [TF's probabilistic library](https://www.tensorflow.org/probability), specifically focusing on agents using recurrent neural networks (RNNs).
 
-- Although possibly subject to change in the future, the RL implementations are currently implemented and optimized for a non-distributed setup (i.e., for a single CPU and/or GPU setup). 
+- Compatible with Keras' Functional API.
+
+- Although possibly subject to change in the future, currently implemented and optimized for a non-distributed setup (i.e., for a single CPU and/or GPU setup). 
 
 > A quick benchmark of the recurrent PPO algorithm in the [Atari](https://gymnasium.farama.org/environments/atari/) environments (using a single processor + GPU, and 32 parallel environments), shows that it processes, roughly, 6-12M frames per hour &mdash; approximately 1700-3300 frames per second (FPS).  
 
