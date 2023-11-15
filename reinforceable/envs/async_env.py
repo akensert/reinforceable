@@ -33,9 +33,11 @@ class AsyncEnvironment(Environment):
     Example:
 
     >>> env_constructors = [
-    ...     lambda: gym.make('LunarLanderContinuous-v2') for _ in range(8)
+    ...     lambda: reinforceable.envs.gym_wrappers.TimestepEnv(
+    ...         gym.make('LunarLanderContinuous-v2')
+    ...     ) for _ in range(8)
     ... ]
-    >>> tf_async_env = reinforceable.AsyncEnvironment(
+    >>> tf_async_env = reinforceable.envs.AsyncEnvironment(
     ...     env_constructors,
     ...     input_signature=tf.TensorSpec((8, 2), tf.float32), # optional
     ...     output_signature=reinforceable.Timestep(
@@ -45,6 +47,7 @@ class AsyncEnvironment(Environment):
     ...         info={}
     ...     )
     ... )
+    >>> initial_timestep = tf_async_env.reset()
 
     Args:
         env_constructors:
@@ -178,7 +181,8 @@ def _worker(
     
     # TODO: Sufficient?
     np.random.seed(seed)
-    env.seed(seed)
+    if hasattr(env, 'seed'):
+        env.seed(seed)
 
     parent_pipe.close()
     
