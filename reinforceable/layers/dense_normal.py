@@ -96,7 +96,7 @@ class DenseNormal(tfp.layers.DistributionLambda):
                 activation=self._scale_activation,
                 bias_initializer=self._bias_initializer,
                 bias_regularizer=self._bias_regularizer,
-                bias_constraints=self._bias_constraint,
+                bias_constraint=self._bias_constraint,
                 name='scale_layer')
 
         self.loc_layer = layers.Dense(
