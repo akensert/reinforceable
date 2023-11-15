@@ -78,11 +78,11 @@ class Driver(tf.Module):
                 `training`. 
        
         Returns:
-            Trajectory data, sampled from the `Buffer`. For PPO, this data 
-            can directly be used to compute advantages and returns, and 
-            subsquently used to update the PPO agent. For DDPG, TD3 or SAC, 
-            this data can be added to the experience replay buffer, which can 
-            then subsquently be sampled to train the agent.
+            Trajectory data, sampled from the `Buffer` and subsequently
+            processed by `agent.finalize_trajectory`. For PPO, the returned
+            (processed) data can directly be used to train the agent. For e.g., 
+            TD3 and SAC, this data can be added to experience replay buffer, 
+            and subsquently sampled and used to train the agent.
         '''
 
         if not steps and not episodes:
