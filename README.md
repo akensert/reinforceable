@@ -16,6 +16,8 @@ Work in progress.
 
 - Python RL environments (e.g., [Gym(nasium)](https://github.com/Farama-Foundation/Gymnasium) enviroments such as [Classic Control](https://gymnasium.farama.org/environments/classic_control/) and [Atari](https://gymnasium.farama.org/environments/atari/) environments) can be run on the TF graph, allowing the complete interaction loop (agent-environment interaction) to run non-eagerly. See [Driver](https://github.com/akensert/reinforceable/blob/main/reinforceable/driver.py).
 
+- Hybrid action spaces.
+
 - A PPO algorithm that deals with *partial observability* is implemented ([RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py)). [RecurrentPPOAgent](https://github.com/akensert/reinforceable/blob/main/reinforceable/agents/ppo/ppo_agent.py) makes use of stateful RNNs to pass hidden states between time steps, allowing the agent to make decisions based on past states as well as the current state (Figure B). This contrasts to a typical PPO implementations wherein the agent makes decisions based on the current state only (Figure A).
 
 <img src="https://github.com/akensert/reinforceable/blob/main/media/ppo.jpg" alt="PPO" width="800">
@@ -42,7 +44,7 @@ For hybrid action spaces, just combine action layers:
 from keras import Model
 from reinforceable import layers
 # ... 
-action_1 = layers.DenseNormal((2,), [-1., 1.], x)   # continuous action, dim=2
+action_1 = layers.DenseNormal((2,), [-1., 1.])(x)   # continuous action, dim=2
 action_2 = layers.DenseCategorical((10,))(x)        # discrete action, n=10
 policy_network = Model(inputs, (action_1, action_2))
 # ...
