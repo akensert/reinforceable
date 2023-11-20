@@ -1,12 +1,9 @@
 import tensorflow as tf
 
-import numpy as np
-
 from typing import NamedTuple
 
 from reinforceable.types import TensorOrSpec
 from reinforceable.types import NestedTensorOrSpec
-from reinforceable.types import Shape
 from reinforceable.types import DType
 from reinforceable.types import Tensor 
 
@@ -48,22 +45,10 @@ class Timestep(NamedTuple):
             discount_value = tf.convert_to_tensor(discount_value)
         return discount_value * (1.0 - self.terminal(discount_value.dtype))
 
-    @classmethod
-    def from_shape(cls, shape: Shape) -> 'Timestep':
-        shape = tf.TensorShape(shape)
-        batch_shape = shape[:1]
-        return cls(
-            state=tf.TensorSpec(shape, tf.float32),
-            step_type=tf.TensorSpec(
-                batch_shape.concatenate([1]), tf.int32),
-            reward=tf.TensorSpec(
-                batch_shape.concatenate([1]), tf.float32),
-            info={}
-        )
-    
     def __getattr__(self, name: str) -> NestedTensorOrSpec:
         if name in self.info:
             return self.info[name]
         elif name == 'action_mask':
             return None 
         raise AttributeError(f'{name!r} not found.')
+
