@@ -2,34 +2,7 @@ import tensorflow as tf
 import numpy as np
 import gymnasium as gym
 
-from reinforceable.timestep import Timestep
 from reinforceable.types import GymEnvironment
-
-
-class TimestepEnv(gym.Wrapper):
-    
-    # TODO: Possibly deprecate. Timestep wrapping can occur inside Environment.
-    #       Need to figure out how to best do this.
-
-    def reset(self) -> Timestep:
-        state, info = self.env.reset()
-        return Timestep(
-            state=state, 
-            reward=np.array([0.0], np.float32), 
-            step_type=np.array([0], np.int32),
-            info=info
-        )
-    
-    def step(self, action: np.ndarray|float|int) -> Timestep:
-        state, reward, terminal, truncated, info = self.env.step(action)
-        terminal = (terminal or truncated)
-        return Timestep(
-            state=state, 
-            reward=np.array([reward], np.float32), 
-            step_type=np.array([2] if terminal else [1], np.int32),
-            info=info
-        )
-    
 
 
 class NoInfoEnv(gym.Wrapper):

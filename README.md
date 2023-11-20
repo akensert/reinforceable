@@ -36,8 +36,8 @@ Work in progress.
 - Distributions
     - [BoundedNormal](https://github.com/akensert/reinforceable/blob/main/reinforceable/distributions/bounded_normal.py) - a bounded normal distribution, inheriting from `TransformedDistribution`.
 - Environments
-    - [TimestepEnv](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/gym_wrappers.py) - wraps [gymnasium](https://gymnasium.farama.org/) environments to output [Timesteps](https://github.com/akensert/reinforceable/blob/main/reinforceable/timestep.py). (May get deprecated in the future, but for now used to deal with [tf.numpy_function](https://www.tensorflow.org/api_docs/python/tf/numpy_function).)
-    - [AsyncEnvironment](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/async_env.py) - allowing multiple independent (fow now [TimestepEnv](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/gym_wrappers.py)) environments to run in parallel. 
+    - [Environment](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/env.py) - Abstract environment that wraps gym environment's `reset` and `step` in `tf.numpy_function` and converts its output to a [Timestep](https://github.com/akensert/reinforceable/blob/main/reinforceable/timestep.py).
+    - [AsyncEnvironment](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/async_env.py) - allowing multiple independent environments to run in parallel. Inherits from [Environment](https://github.com/akensert/reinforceable/blob/main/reinforceable/envs/env.py).
 
 For hybrid action spaces, just combine action layers:
 ```python

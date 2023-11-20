@@ -7,6 +7,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 import numpy as np
+import gymnasium as gym
 
 import typing
 
@@ -34,7 +35,16 @@ class GymEnvironment(typing.Protocol):
     def seed(self):
         ...
 
-    # etc.
+    def close(self):
+        ...
+
+    @property
+    def action_space(self) -> gym.spaces.Space:
+        ...
+
+    @property
+    def observation_space(self) -> gym.spaces.Space:
+        ...
 
     
 GymEnvironmentConstructor = typing.Type[GymEnvironment]

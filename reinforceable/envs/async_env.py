@@ -7,22 +7,20 @@ import traceback
 from absl import logging
 
 from reinforceable.envs.env import Environment
-from reinforceable.timestep import Timestep
+from reinforceable.timestep import Timestep 
 
 from reinforceable.types import GymEnvironment
 from reinforceable.types import GymEnvironmentConstructor
 from reinforceable.types import NestedSpec
 from reinforceable.types import Tensor 
 from reinforceable.types import NestedTensor
+from reinforceable.types import FlatTimestep
 
 
 READY = 0
 RESULT = 1
 EXCEPTION = 2
 
-
-# TODO: Can KeyboardInterrupt interrupt the agent-environment interaction
-#       without breaking the pipes? 
 
 class AsyncEnvironment(Environment):
 
@@ -33,20 +31,9 @@ class AsyncEnvironment(Environment):
     Example:
 
     >>> env_constructors = [
-    ...     lambda: reinforceable.envs.gym_wrappers.TimestepEnv(
-    ...         gym.make('LunarLanderContinuous-v2')
-    ...     ) for _ in range(8)
+    ...     lambda: gym.make('LunarLanderContinuous-v2') for _ in range(8)
     ... ]
-    >>> tf_async_env = reinforceable.envs.AsyncEnvironment(
-    ...     env_constructors,
-    ...     input_signature=tf.TensorSpec((8, 2), tf.float32), # optional
-    ...     output_signature=reinforceable.Timestep(
-    ...         state=tf.TensorSpec((8, 8), tf.float32),
-    ...         step_type=tf.TensorSpec((8, 1), tf.int32),
-    ...         reward=tf.TensorSpec((8, 1), tf.float32),
-    ...         info={}
-    ...     )
-    ... )
+    >>> tf_async_env = reinforceable.envs.AsyncEnvironment(env_constructors)
     >>> initial_timestep = tf_async_env.reset()
 
     Args:
@@ -55,18 +42,6 @@ class AsyncEnvironment(Environment):
             in the worker process. This argument may take an input like this:
             `env_constructors=[lambda: gym.make(id) for _ in range(32)]` to
             run 32 independent environments in parallel.
-        output_signature:
-            The signature of the output of `step` and `reset` (namely, time 
-            steps). The shapes should include batch_size. The `Timestep` output 
-            of `step` and `reset` must have the same structure. For instance, 
-            if `step` supply a `Timestep` with certain type information (found 
-            in `info`), the `reset` also needs to supply a `Timestep` with that 
-            type of information. Currently, this is both required by the 
-            `Environment` and the `Driver`.
-        input_signature:
-            Optional signature of the input to `step` (namely, the signature of
-            the action). The shape(s) should include batch_size. 
-            Default to None.
         context:
             Optional context, supplied to multiprocessing.get_context. If None
             the default context is used. Default to None.
@@ -78,13 +53,23 @@ class AsyncEnvironment(Environment):
     def __init__(
         self, 
         env_constructors: list[GymEnvironmentConstructor], 
-        output_signature: Timestep,
-        input_signature: NestedSpec = None,
         context: str = None,
         seeds: list[int] = None
     ) -> None:
         
-        super().__init__(input_signature, output_signature)
+        batch_size = len(env_constructors)
+
+        # Obtain action spec, reset output spec and step output spec
+        dummy_env = env_constructors[0]()
+        dummy_env.reset()
+        action = dummy_env.action_space.sample()
+        timestep = _convert_to_timestep(*dummy_env.step(action))
+        action_spec = _batched_spec_from_value(action, batch_size)
+        output_spec = _batched_spec_from_value(timestep, batch_size)
+        dummy_env.close()
+        del dummy_env, action, timestep
+
+        super().__init__(action_spec=action_spec, output_spec=output_spec)
         
         context = mp.get_context(context)
 
@@ -92,7 +77,7 @@ class AsyncEnvironment(Environment):
         parent_pipes = []
 
         if seeds is None:
-            seeds = list(range(len(env_constructors)))
+            seeds = list(range(batch_size))
 
         for index, (env_ctor, seed) in enumerate(zip(env_constructors, seeds)):
 
@@ -117,12 +102,12 @@ class AsyncEnvironment(Environment):
         self.processes = processes
         self.parent_pipes = parent_pipes
 
-    def py_reset(self, *, auto_reset: bool = True) -> Timestep:
+    def py_reset(self, *, auto_reset: bool = True) -> FlatTimestep:
         for parent_pipe in self.parent_pipes:
             parent_pipe.send(('reset', auto_reset))
         return self._receive()
     
-    def py_step(self, action: NestedTensor) -> Timestep:
+    def py_step(self, action: NestedTensor) -> FlatTimestep:
         actions = _nested_unbatch(action)
         for parent_pipe, action in zip(self.parent_pipes, actions):
             parent_pipe.send(('step', action))
@@ -132,15 +117,6 @@ class AsyncEnvironment(Environment):
         for parent_pipe in self.parent_pipes:
             parent_pipe.send(('render', None))
         return self._receive()
-
-    def _receive(self) -> Timestep|NestedTensor|Tensor:
-        outputs = []
-        for parent_pipe in self.parent_pipes:
-            message, output = parent_pipe.recv()
-            outputs.append(output)
-            if message == EXCEPTION:
-                raise Exception(output)
-        return _nested_batch(outputs)
     
     def close(self):
         for parent_pipe, process in zip(self.parent_pipes, self.processes):
@@ -148,10 +124,53 @@ class AsyncEnvironment(Environment):
             parent_pipe.close()
             process.join()
 
+    def _receive(self) -> Tensor|NestedTensor|FlatTimestep:
+        outputs = []
+        exceptions = []
+        for parent_pipe in self.parent_pipes:
+            message, output = parent_pipe.recv()
+            outputs.append(output)
+            if message == EXCEPTION:
+                exceptions.append(output)
+        
+        if len(exceptions):
+            raise Exception(exceptions)
+        
+        return _nested_batch(outputs)
+    
 
+def _convert_to_timestep(*data: NestedTensor|Tensor) -> Timestep:
+
+    if len(data) == 2:
+        observation, info = data
+        return Timestep(
+            state=observation,
+            step_type=np.array([0], np.int32),
+            reward=np.array([0.0], np.float32),
+            info=info)
+    
+    observation, reward, terminal, truncated, info = data
+    return Timestep(
+        state=observation,
+        step_type=(
+            np.array([2], np.int32) if (terminal or truncated) else 
+            np.array([1], np.int32)
+        ),
+        reward=np.array([reward], np.float32),
+        info=info)
+
+def _batched_spec_from_value(
+    data: NestedTensor|Timestep, 
+    batch_size: int
+) -> NestedSpec:
+    data = tf.nest.map_structure(tf.convert_to_tensor, data)
+    spec = tf.nest.map_structure(
+        lambda x: tf.TensorSpec((batch_size,) + x.shape, x.dtype), data)
+    return spec 
+    
 def _nested_batch(
-    inputs: list[Timestep|NestedTensor]
-) -> Timestep|NestedTensor:
+    inputs: list[NestedTensor|Timestep]
+) -> NestedTensor|Timestep:
     flat_inputs = [
         tf.nest.flatten(x, expand_composites=True) for x in inputs
     ]
@@ -160,8 +179,8 @@ def _nested_batch(
         inputs[0], stacked_inputs, expand_composites=True)
 
 def _nested_unbatch(
-    inputs: Timestep|NestedTensor
-) -> list[Timestep|NestedTensor]:
+    inputs: NestedTensor|Timestep
+) -> list[NestedTensor|Timestep]:
     flat_inputs = tf.nest.flatten(inputs, expand_composites=True)
     unstacked_flat_inputs = [list(x) for x in flat_inputs]
     inputs = [
@@ -169,6 +188,7 @@ def _nested_unbatch(
         for x in zip(*unstacked_flat_inputs)]
     return inputs
 
+# TODO: unpack timestep (it is no longer a Timestep)
 def _worker(
     index: int, 
     env: bytes, 
@@ -195,19 +215,17 @@ def _worker(
             command, *data = child_pipe.recv()
 
             if command == 'step':
-                action, = data
-                if timestep.step_type == 2:
-                    if auto_reset:
-                        timestep = env.reset()
-                    else:
-                        pass
-                else:
-                    timestep = env.step(action)
+                if timestep.step_type[0] != 2:
+                    timestep = _convert_to_timestep(*env.step(data[0]))
+                elif auto_reset:
+                    timestep = _convert_to_timestep(*env.reset())
+      
                 child_pipe.send((RESULT, timestep))
 
             elif command == 'reset':
                 auto_reset, = data
-                timestep = env.reset()
+                reset_output = env.reset()
+                timestep = _convert_to_timestep(*reset_output)
                 child_pipe.send((RESULT, timestep))
 
             elif command == 'render':
@@ -216,6 +234,7 @@ def _worker(
 
             elif command == 'close':
                 env.close()
+                child_pipe.send((RESULT, None))
                 break
 
     except (KeyboardInterrupt, Exception):
