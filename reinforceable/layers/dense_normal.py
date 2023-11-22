@@ -20,14 +20,22 @@ class DenseNormal(tfp.layers.DistributionLambda):
         state_dependent_scale: bool = False,
         loc_activation: str = None,
         scale_activation: str = 'softplus',
-        use_bias: bool = True,
-        kernel_initializer: initializers.Initializer = None,
-        bias_initializer: initializers.Initializer = None,
-        kernel_regularizer: regularizers.Regularizer = None,
-        bias_regularizer: regularizers.Regularizer = None,
-        activity_regularizer: regularizers.Regularizer = None,
-        kernel_constraint: constraints.Constraint = None,
-        bias_constraint: constraints.Constraint = None,
+        loc_use_bias: bool = True,
+        scale_use_bias: bool = True,
+        loc_kernel_initializer: initializers.Initializer = None,
+        scale_kernel_initializer: initializers.Initializer = None,
+        loc_bias_initializer: initializers.Initializer = None,
+        scale_bias_initializer: initializers.Initializer = None,
+        loc_kernel_regularizer: regularizers.Regularizer = None,
+        scale_kernel_regularizer: regularizers.Regularizer = None,
+        loc_bias_regularizer: regularizers.Regularizer = None,
+        scale_bias_regularizer: regularizers.Regularizer = None,
+        loc_activity_regularizer: regularizers.Regularizer = None,
+        scale_activity_regularizer: regularizers.Regularizer = None,
+        loc_kernel_constraint: constraints.Constraint = None,
+        scale_kernel_constraint: constraints.Constraint = None,
+        loc_bias_constraint: constraints.Constraint = None,
+        scale_bias_constraint: constraints.Constraint = None,
         convert_to_tensor_fn: callable = tfp.distributions.Distribution.sample,
         validate_args: bool = False,
         name: str = 'DenseNormal',
@@ -44,23 +52,50 @@ class DenseNormal(tfp.layers.DistributionLambda):
         self._state_dependent_scale = state_dependent_scale
 
         self._units = tf.math.reduce_prod(output_shape)
+
         self._loc_activation = activations.get(loc_activation)
         self._scale_activation = activations.get(scale_activation)
-        self._use_bias = use_bias
+        self._loc_use_bias = loc_use_bias
+        self._scale_use_bias = scale_use_bias
 
-        if kernel_initializer is None:
-            kernel_initializer = initializers.VarianceScaling(0.1)
-        if bias_initializer is None:
-            bias_initializer = initializers.Constant(0.0)
+        if loc_kernel_initializer is None:
+            loc_kernel_initializer = initializers.VarianceScaling(0.1)
+        if loc_bias_initializer is None:
+            loc_bias_initializer = initializers.Constant(0.0)
+
+        if scale_kernel_initializer is None:
+            scale_kernel_initializer = initializers.VarianceScaling(0.1)
+        if scale_bias_initializer is None:
+            scale_bias_initializer = initializers.Constant(0.0)
         
-        self._kernel_initializer = initializers.get(kernel_initializer)
-        self._bias_initializer = initializers.get(bias_initializer)
-        self._kernel_regularizer = regularizers.get(kernel_regularizer)
-        self._bias_regularizer = regularizers.get(bias_regularizer)
-        self._activity_regularizer = regularizers.get(activity_regularizer)
-        self._kernel_constraint = constraints.get(kernel_constraint)
-        self._bias_constraint = constraints.get(bias_constraint)
-
+        self._loc_kernel_initializer = initializers.get(
+            loc_kernel_initializer)
+        self._scale_kernel_initializer = initializers.get(
+            scale_kernel_initializer)
+        self._loc_bias_initializer = initializers.get(
+            loc_bias_initializer)
+        self._scale_bias_initializer = initializers.get(
+            scale_bias_initializer)
+        self._loc_kernel_regularizer = regularizers.get(
+            loc_kernel_regularizer)
+        self._scale_kernel_regularizer = regularizers.get(
+            scale_kernel_regularizer)
+        self._loc_bias_regularizer = regularizers.get(
+            loc_bias_regularizer)
+        self._scale_bias_regularizer = regularizers.get(
+            scale_bias_regularizer)
+        self._loc_activity_regularizer = regularizers.get(
+            loc_activity_regularizer)
+        self._scale_activity_regularizer = regularizers.get(
+            scale_activity_regularizer)
+        self._loc_kernel_constraint = constraints.get(
+            loc_kernel_constraint)
+        self._scale_kernel_constraint = constraints.get(
+            scale_kernel_constraint)
+        self._loc_bias_constraint = constraints.get(
+            loc_bias_constraint)
+        self._scale_bias_constraint = constraints.get(
+            scale_bias_constraint)
 
         super(DenseNormal, self).__init__(
             make_distribution_fn=lambda inputs: DenseNormal.new(
@@ -81,35 +116,35 @@ class DenseNormal(tfp.layers.DistributionLambda):
             self.scale_layer = layers.Dense(
                 units=self._units, 
                 activation=self._scale_activation,
-                use_bias=self._use_bias,
-                kernel_initializer=self._kernel_initializer,
-                bias_initializer=self._bias_initializer,
-                kernel_regularizer=self._kernel_regularizer,
-                bias_regularizer=self._bias_regularizer,
-                activity_regularizer=self._activity_regularizer,
-                kernel_constraint=self._kernel_constraint,
-                bias_constraint=self._bias_constraint,
+                use_bias=self._scale_use_bias,
+                kernel_initializer=self._scale_kernel_initializer,
+                bias_initializer=self._scale_bias_initializer,
+                kernel_regularizer=self._scale_kernel_regularizer,
+                bias_regularizer=self._scale_bias_regularizer,
+                activity_regularizer=self._scale_activity_regularizer,
+                kernel_constraint=self._scale_kernel_constraint,
+                bias_constraint=self._scale_bias_constraint,
                 name='scale_layer')
         else:
             self.scale_layer = _BiasLayer(
                 dim=self._units,
                 activation=self._scale_activation,
-                bias_initializer=self._bias_initializer,
-                bias_regularizer=self._bias_regularizer,
-                bias_constraint=self._bias_constraint,
+                bias_initializer=self._scale_bias_initializer,
+                bias_regularizer=self._scale_bias_regularizer,
+                bias_constraint=self._scale_bias_constraint,
                 name='scale_layer')
 
         self.loc_layer = layers.Dense(
             units=self._units, 
             activation=self._loc_activation,
-            use_bias=self._use_bias,
-            kernel_initializer=self._kernel_initializer,
-            bias_initializer=self._bias_initializer,
-            kernel_regularizer=self._kernel_regularizer,
-            bias_regularizer=self._bias_regularizer,
-            activity_regularizer=self._activity_regularizer,
-            kernel_constraint=self._kernel_constraint,
-            bias_constraint=self._bias_constraint,
+            use_bias=self._loc_use_bias,
+            kernel_initializer=self._loc_kernel_initializer,
+            bias_initializer=self._loc_bias_initializer,
+            kernel_regularizer=self._loc_kernel_regularizer,
+            bias_regularizer=self._loc_bias_regularizer,
+            activity_regularizer=self._loc_activity_regularizer,
+            kernel_constraint=self._loc_kernel_constraint,
+            bias_constraint=self._loc_bias_constraint,
             name='logits_layer')
     
     @staticmethod
