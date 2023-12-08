@@ -271,6 +271,8 @@ class RecurrentPPOAgent(Agent):
 
         training = True
 
+        tf.summary.scalar('learning_rate', self.optimizer.learning_rate)
+
         with tf.GradientTape() as tape:
             
             # State was normalized in `preprocess`
@@ -510,3 +512,10 @@ class RecurrentPPOAgent(Agent):
             lambda x: x.tensor_distribution, distrib)
 
         return distrib
+
+    def save(self, path, *args, **kwargs):
+        kwargs['deterministic'] = kwargs.pop(
+            'deterministic', tf.TensorSpec([], tf.bool, name='deterministic'))
+        kwargs['training'] = kwargs.pop(
+            'training', tf.TensorSpec([], tf.bool, name='training'))
+        super().save(path, *args, **kwargs)

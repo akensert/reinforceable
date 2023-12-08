@@ -211,10 +211,18 @@ class Agent(tf.Module, ABC):
 
         return train_info
     
+    def save(self, path: str, *args, **kwargs):
+        original_call = self.__call__
+        self.__call__ = tf.function(self.__call__)
+        self.__call__.get_concrete_function(*args, **kwargs)
+        tf.saved_model.save(self, path)
+        self.__call__ = original_call
+
     def _play(
         self, 
         env: Environment, 
         pad: int = 0,
+        seed: list[int] = None,
         **kwargs,
     ) -> tuple[np.ndarray, np.ndarray]:
         
@@ -225,27 +233,34 @@ class Agent(tf.Module, ABC):
         future and made public.
         '''
 
-        timestep = env.reset(auto_reset=False)
+        timestep = env.reset(auto_reset=False, seed=seed)
         episode_reward = timestep.reward    # [0.0, 0.0, ..., 0.0]
         episode_length = timestep.step_type # [0, 0, ..., 0]
         
         while not all(timestep.terminal()):
 
-            timestep = tf.nest.map_structure(
-                lambda x: tf.pad(x, [(0, pad)] + [(0, 0)] * (len(x.shape)-1) ), timestep)
+            if pad > 0:
+                timestep = tf.nest.map_structure(
+                    lambda x: tf.pad(x, [(0, pad)] + [(0, 0)] * (len(x.shape)-1) ), timestep)
             
             timestep = nested_ops.expand_dim(timestep, 0)
+            
             action, _ = self(timestep, **kwargs)
             action = nested_ops.squeeze_dim(action, 0)
+            
+            if pad > 0:
+                action = action[:-pad]
 
-            action = action[:-pad]
-
-            timestep = env.step(action)
+            next_timestep = env.step(action)
 
             episode_reward += tf.where(
-                timestep.terminal(), 0.0, timestep.reward)
+                timestep.terminal(), 0.0, next_timestep.reward)
             
             episode_length += tf.where(
                 timestep.terminal(), 0, 1)
-        
+            
+            timestep = next_timestep
+
+            env.render()
+
         return episode_reward.numpy(), episode_length.numpy()
