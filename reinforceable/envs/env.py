@@ -9,7 +9,6 @@ from reinforceable.types import Tensor
 from reinforceable.types import NestedSpec
 from reinforceable.types import NestedTensor 
 from reinforceable.types import FlatTimestep
-from reinforceable.types import Shape 
 from reinforceable.types import DType
 
 
@@ -30,51 +29,53 @@ class Environment(ABC):
         '''A step in the environment.'''
 
     @abstractmethod
-    def py_reset(self, *, auto_reset: bool) -> FlatTimestep:
+    def py_reset(self, **kwargs) -> FlatTimestep:
         '''A reset of the environment.'''
 
     @abstractmethod
     def py_render(self) -> Tensor:
         '''A rendering step of the environment.'''
 
-    def reset(self, *, auto_reset: bool = True) -> Timestep:
-        flat_timestep = tf.numpy_function(
-            self._reset, inp=[auto_reset], Tout=self._flat_output_dtype)
+    # @abstractmethod
+    # def random_action(self):
+    #     '''A random action.'''
+
+    def reset(self, **kwargs) -> Timestep:
+        flat_timestep = self._tf_reset(**kwargs)
         flat_timestep = tf.nest.map_structure(
             tf.ensure_shape, flat_timestep, self._flat_output_shape)
         return tf.nest.pack_sequence_as(self.output_spec, flat_timestep)
 
     def step(self, action: NestedTensor) -> Timestep:
         tf.nest.assert_same_structure(self.action_spec, action)
-        flat_action = tf.nest.flatten(action)
-        flat_timestep = tf.numpy_function(
-            self._step, inp=flat_action, Tout=self._flat_output_dtype)
+        flat_timestep = self._tf_step(action)
         flat_timestep = tf.nest.map_structure(
             tf.ensure_shape, flat_timestep, self._flat_output_shape)
         return tf.nest.pack_sequence_as(self.output_spec, flat_timestep)
     
-    def render(
-        self, 
-        output_shape: Shape = None, 
-        output_dtype: DType = tf.uint8
-    ) -> Tensor:
-        output = tf.numpy_function(
-            self._render, inp=[], Tout=output_dtype)
-        if output_shape is not None:
-            output = tf.ensure_shape(output, output_shape)
-        return output
+    def render(self, output_dtype: DType = tf.uint8):
+        return self._tf_render(output_dtype=output_dtype)
     
-    def _reset(self, auto_reset: bool) -> FlatTimestep:
-        timestep = self.py_reset(auto_reset=auto_reset)
-        return tf.nest.flatten(timestep)
+    def _tf_reset(self, **kwargs) -> FlatTimestep:
+        kwargs_structure = kwargs 
+        def _reset(*flat_kwargs) -> FlatTimestep:
+            kwargs = tf.nest.pack_sequence_as(kwargs_structure, flat_kwargs)
+            return tf.nest.flatten(self.py_reset(**kwargs))
+        flat_kwargs = tf.nest.flatten(kwargs)
+        return tf.numpy_function(_reset, flat_kwargs, self._flat_output_dtype)
 
-    def _step(self, *flat_action: list[Tensor]) -> FlatTimestep:
-        action = tf.nest.pack_sequence_as(self.action_spec, list(flat_action))
-        timestep = self.py_step(action)
-        return tf.nest.flatten(timestep)
-    
-    def _render(self) -> Tensor:
-        return self.py_render()
+    def _tf_step(self, action: NestedTensor) -> FlatTimestep:
+        action_structure = action 
+        def _step(*flat_action: Tensor) -> FlatTimestep:
+            action = tf.nest.pack_sequence_as(action_structure, flat_action)
+            return tf.nest.flatten(self.py_step(action))
+        flat_action = tf.nest.flatten(action)
+        return tf.numpy_function(_step, flat_action, self._flat_output_dtype)
+
+    def _tf_render(self, output_dtype: DType) -> Tensor:
+        def _render():
+            return self.py_render()
+        return tf.numpy_function(_render, [], output_dtype)
     
     def _set_action_spec(self, action_spec: NestedSpec) -> None:
         self.action_spec = action_spec 

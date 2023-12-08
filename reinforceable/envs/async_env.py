@@ -4,6 +4,7 @@ import multiprocessing as mp
 import sys
 import cloudpickle
 import traceback
+
 from absl import logging
 
 from reinforceable.envs.env import Environment
@@ -102,9 +103,17 @@ class AsyncEnvironment(Environment):
         self.processes = processes
         self.parent_pipes = parent_pipes
 
-    def py_reset(self, *, auto_reset: bool = True) -> FlatTimestep:
-        for parent_pipe in self.parent_pipes:
-            parent_pipe.send(('reset', auto_reset))
+    def py_reset(self, **kwargs) -> FlatTimestep:
+        auto_reset = kwargs.pop('auto_reset', True)
+        seeds = kwargs.pop('seed', None)
+        if seeds is None:
+            for parent_pipe in self.parent_pipes:
+                parent_pipe.send(('reset', auto_reset, None))
+        else:
+            assert seeds.shape and len(seeds) == len(self.parent_pipes), (
+                '`seed` needs to contain a seed for each environment.')
+            for parent_pipe, seed in zip(self.parent_pipes, list(seeds)):
+                parent_pipe.send(('reset', auto_reset, seed))
         return self._receive()
     
     def py_step(self, action: NestedTensor) -> FlatTimestep:
@@ -223,8 +232,8 @@ def _worker(
                 child_pipe.send((RESULT, timestep))
 
             elif command == 'reset':
-                auto_reset, = data
-                reset_output = env.reset()
+                auto_reset, seed = data
+                reset_output = env.reset(seed=seed)
                 timestep = _convert_to_timestep(*reset_output)
                 child_pipe.send((RESULT, timestep))
 
