@@ -152,7 +152,7 @@ class Driver(tf.Module):
 
             return (step_counter, episode_counter, next_timestep, buffer)
         
-        def _interaction_step(timestep: Timestep) -> tuple[Timestep, Timestep]:
+        def _interaction_step(timestep: Timestep, **kwargs) -> tuple[Timestep, Timestep]:
             
             '''The interaction step, invoked in _interaction_step_and_collect.'''
 
