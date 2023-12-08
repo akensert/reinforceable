@@ -189,12 +189,15 @@ class DenseNormal(tfp.layers.DistributionLambda):
         distribution = tfp.distributions.Independent(
             distribution, reinterpreted_batch_ndims=output_shape.ndims)
 
-        if not hard_bounds:
-            return distribution
+        if hard_bounds:
+            distribution = BoundedNormal(
+                distribution, output_bounds, validate_args)
 
-        return BoundedNormal(
-            distribution, output_bounds, validate_args)
+        tf.summary.histogram('distribution/mean', distribution.mean())
+        tf.summary.histogram('distribution/stddev', distribution.stddev())
 
+        return distribution
+    
     @staticmethod
     def rescale_loc(
         loc: tf.Tensor, 
