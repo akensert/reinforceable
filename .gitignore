@@ -1,5 +1,7 @@
 examples/*.ipynb
 !examples/example.ipynb
+applications/chromatography/*/
+applications/chromatography/_*.ipynb 
 
 # jupyter
 MANIFEST
