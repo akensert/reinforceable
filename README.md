@@ -3,6 +3,9 @@
 ## Status
 Work in progress.
 
+## Applications
+- [Method optimization in chromatography](https://github.com/akensert/reinforceable/tree/main/applications/chromatography)
+
 ## About
 - Deep reinforcement learning (RL) implementations using [TF's probabilistic library](https://www.tensorflow.org/probability), specifically focusing on agents using recurrent neural networks (RNNs).
 
