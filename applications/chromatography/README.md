@@ -12,7 +12,7 @@ So far, a PPO agent has been trained to improve separations of random mixtures o
 
 1. Navigate to a desired location (via command line), and clone the repository: `git clone git@github.com:akensert/reinforceable.git`
 2. Make sure you are in your desired Python environment, and then install the **reinforceable** package: `pip install -e .`
-3. Install **jupyter**, **matplotlib** and **tqdm**: `pip install jupyter matplotlib tqdm`
+3. Install **jupyter** and **matplotlib**: `pip install jupyter matplotlib`
 4. Navigate to `applications/chromatography/` and run jupyter: `jupyter notebook`.
 5. Open **run.ipynb** and run all the cells in it.
 6. To observe training progression, go back to the command line (you should be in `applications/chromatography/`) and run tensorboard: `tensorboard --logdir ./logs`.

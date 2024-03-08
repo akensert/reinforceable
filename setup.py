@@ -12,9 +12,9 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
-    "tensorflow>=2.13.0",
-    "tensorflow-probability>=0.20.1",
-    "gymnasium[all]>=0.26.2",
+    "tensorflow==2.13.0",
+    "tensorflow-probability==0.20.1",
+    "gymnasium[all]==0.26.2",
 ]
 
 setuptools.setup(

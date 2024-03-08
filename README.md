@@ -58,10 +58,10 @@ policy_network = Model(inputs, (action_1, action_2))
 See [examples/example.ipynb](https://github.com/akensert/reinforceable/blob/main/examples/example.ipynb).
 
 ## Dependencies
-- Python >= 3.10
-    - tensorflow >= 2.13.0
-    - tensorflow-probability >= 0.20.1
-    - gymnasium[all] >= 0.26.2
+- Python (3.10)
+    - tensorflow (2.13.0)
+    - tensorflow-probability (0.20.1)
+    - gymnasium[all] (0.26.2)
 
 > For atari environments, atari ROMs need to be installed. [See here](https://gymnasium.farama.org/environments/atari/).
 
